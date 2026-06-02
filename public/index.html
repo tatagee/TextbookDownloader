@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>教材下载工具 · 智慧教育平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 50%, #2563eb 100%);
+    }
+    .card-shadow { box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .btn-primary {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #1e40af, #1d4ed8); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+    .btn-download {
+      background: linear-gradient(135deg, #059669, #10b981);
+      transition: all 0.2s;
+    }
+    .btn-download:hover { background: linear-gradient(135deg, #047857, #059669); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+    .result-card { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+  <!-- Header -->
+  <header class="gradient-bg text-white py-10 px-4 text-center">
+    <div class="max-w-2xl mx-auto">
+      <div class="text-4xl mb-3">📚</div>
+      <h1 class="text-2xl font-bold tracking-wide">国家智慧教育平台 · 教材下载</h1>
+      <p class="mt-2 text-blue-200 text-sm">粘贴课本在线阅读链接，一键获取 PDF 下载地址</p>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="max-w-2xl mx-auto px-4 py-10">
+
+    <!-- Input Card -->
+    <div class="bg-white rounded-2xl card-shadow p-6 mb-6">
+      <label class="block text-gray-700 text-sm font-medium mb-2">
+        课本页面链接
+        <span class="ml-1 text-gray-400 font-normal">（来自 basic.smartedu.cn）</span>
+      </label>
+      <textarea
+        id="urlInput"
+        rows="3"
+        placeholder="https://basic.smartedu.cn/tchMaterial/detail?contentType=assets_document&contentId=..."
+        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none transition"
+      ></textarea>
+
+      <button
+        id="extractBtn"
+        onclick="extractUrl()"
+        class="btn-primary mt-4 w-full text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        获取下载链接
+      </button>
+    </div>
+
+    <!-- Result Area -->
+    <div id="result"></div>
+
+    <!-- How to use -->
+    <div class="bg-white rounded-2xl card-shadow p-6 mt-6">
+      <h2 class="text-gray-700 font-semibold text-sm mb-4 flex items-center gap-2">
+        <span>🔍</span> 使用说明
+      </h2>
+      <ol class="space-y-3 text-sm text-gray-500">
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+          前往 <a href="https://basic.smartedu.cn/tchMaterial" target="_blank" class="text-blue-500 hover:underline">智慧教育平台教材中心</a> 找到你需要的课本，打开在线阅读页面
+        </li>
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+          复制浏览器地址栏中完整的 URL，粘贴到上方输入框
+        </li>
+        <li class="flex gap-3">
+          <span class="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+          点击「获取下载链接」，稍等片刻后点击绿色按钮即可下载 PDF
+        </li>
+      </ol>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-xs text-gray-400 pb-8 mt-4">
+    仅供学习研究使用 · 请遵守平台使用条款
+  </footer>
+
+  <script>
+    async function extractUrl() {
+      const url = document.getElementById('urlInput').value.trim();
+      const resultEl = document.getElementById('result');
+      const btn = document.getElementById('extractBtn');
+
+      if (!url) {
+        showError('请先粘贴课本页面链接');
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg class="spinner w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        正在获取中…
+      `;
+      resultEl.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || '请求失败，请稍后重试');
+          return;
+        }
+
+        showResult(data);
+      } catch (err) {
+        showError('网络错误，请确认服务正在运行');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          获取下载链接
+        `;
+      }
+    }
+
+    function showResult(data) {
+      const el = document.getElementById('result');
+      el.innerHTML = `
+        <div class="result-card bg-white rounded-2xl card-shadow p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="text-green-500 text-lg">✅</span>
+            <span class="font-semibold text-gray-700 text-sm">获取成功</span>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-xs text-gray-400 mb-1">文件名</p>
+            <p class="text-sm text-gray-700 font-medium break-all">${escHtml(data.filename)}</p>
+          </div>
+
+          <div class="mb-5">
+            <p class="text-xs text-gray-400 mb-1">下载地址</p>
+            <div class="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-xs text-blue-600 break-all font-mono">${escHtml(data.downloadUrl)}</div>
+          </div>
+
+          <a
+            href="/api/download?url=${encodeURIComponent(data.downloadUrl)}"
+            class="btn-download w-full text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 no-underline"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            点击下载 PDF
+          </a>
+        </div>
+      `;
+    }
+
+    function showError(msg) {
+      document.getElementById('result').innerHTML = `
+        <div class="result-card bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
+          <span class="text-red-400 text-lg mt-0.5">⚠️</span>
+          <div>
+            <p class="text-red-600 font-medium text-sm">获取失败</p>
+            <p class="text-red-500 text-xs mt-1">${escHtml(msg)}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // 支持回车提交
+    document.getElementById('urlInput')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.ctrlKey) extractUrl();
+    });
+  </script>
+</body>
+</html>
